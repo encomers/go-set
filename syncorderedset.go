@@ -12,7 +12,7 @@ type SyncOrderedSet[T Ordered] struct {
 // In based on Set by default, but can be based on SyncSet if needed (see NewOrderedSyncSet).
 
 func NewSyncOrderedSet[T Ordered](elements ...T) *SyncOrderedSet[T] {
-	return NewSyncOrderedSetWithCapacity(16, elements...)
+	return NewSyncOrderedSetWithCapacity(len(elements), elements...)
 }
 
 // Create a new OrderedSet with the provided optional elements and initial capacity.

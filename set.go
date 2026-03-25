@@ -26,8 +26,7 @@ type Set[T comparable] struct {
 //	s := NewSet(1, 2, 3)
 //	s := NewSet[int]() // empty set
 func NewSet[T comparable](elements ...T) *Set[T] {
-	s := NewSetWithCapacity(16, elements...)
-	return s
+	return NewSetWithCapacity(len(elements), elements...)
 }
 
 // NewSetWithCapacity creates and initializes a new Set with the provided optional elements and initial capacity.

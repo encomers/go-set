@@ -14,8 +14,7 @@ type SyncSet[T comparable] struct {
 
 // NewSyncSet creates and initializes a new SyncSet with the provided optional elements.
 func NewSyncSet[T comparable](elements ...T) *SyncSet[T] {
-	s := &SyncSet[T]{set: NewSet(elements...)}
-	return s
+	return NewSyncSetWithCapacity(len(elements), elements...)
 }
 
 // NewSyncSetWithCapacity creates and initializes a new SyncSet with the provided optional elements.
