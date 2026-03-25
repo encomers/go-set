@@ -38,3 +38,28 @@ func (s *OrderedSet[T]) Sorted() []T {
 func (s *OrderedSet[T]) Sort(sortFunc func(a, b T) bool) []T {
 	return Sort(s, sortFunc)
 }
+
+// newWithSameFlavor создаёт новый OrderedSet с тем же «внутренним типом»,
+// что и у текущего (Set или SyncSet).
+func (s *OrderedSet[T]) newWithSameFlavor(elements ...T) *OrderedSet[T] {
+	switch s.ISet.(type) {
+	case *Set[T]:
+		return NewOrderedSet(elements...)
+	case *SyncSet[T]:
+		return NewOrderedSyncSet(elements...)
+	default:
+		return NewOrderedSet(elements...) // fallback
+	}
+}
+
+// Copy возвращает новый OrderedSet того же типа (thread-safe или нет).
+func (s *OrderedSet[T]) Copy() ISet[T] {
+	return s.newWithSameFlavor(s.ToSlice()...)
+}
+
+// Partition тоже сохраняет thread-safety.
+func (s *OrderedSet[T]) Partition(predicate func(T) bool) (ISet[T], ISet[T]) {
+	matching, nonMatching := s.ISet.Partition(predicate) // вызываем оригинал
+	return s.newWithSameFlavor(matching.ToSlice()...),
+		s.newWithSameFlavor(nonMatching.ToSlice()...)
+}
