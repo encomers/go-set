@@ -26,11 +26,32 @@ type Set[T comparable] struct {
 //	s := NewSet(1, 2, 3)
 //	s := NewSet[int]() // empty set
 func NewSet[T comparable](elements ...T) *Set[T] {
-	cap := 0
-	if len(elements) > 0 {
-		// Map load factor ~6.5, используем 1.5x для запаса
-		cap = int(float64(len(elements)) * 1.5)
+	s := NewSetWithCapacity(16, elements...)
+	return s
+}
+
+// NewSetWithCapacity creates and initializes a new Set with the provided optional elements and initial capacity.
+// If the number of provided elements exceeds the specified capacity, the capacity will be automatically increased to accommodate all elements.
+//
+// Example:
+//
+//	s := NewSetWithCapacity(100, 1, 2, 3) // initial capacity 100, but only 3 elements
+//	s := NewSetWithCapacity[int](50) // empty set with initial capacity 50
+//
+//	s := NewSetWithCapacity(2, 1, 2, 3) // initial capacity 2, but will be increased to accommodate 3 elements
+func NewSetWithCapacity[T comparable](capacity int, elements ...T) *Set[T] {
+	if capacity < 0 {
+		capacity = 0
 	}
+	if len(elements) > capacity {
+		capacity = len(elements)
+	}
+	// Добавляем запас ~50% (load factor map ~0.65, мы даём хороший запас)
+	cap := int(float64(capacity) * 1.5)
+	if cap < 16 {
+		cap = 16 // минимальный разумный размер
+	}
+
 	s := &Set[T]{data: make(map[T]struct{}, cap)}
 	s.Add(elements...)
 	return s
@@ -90,8 +111,8 @@ func (s *Set[T]) Count(predicate func(T) bool) int {
 // The first set contains elements that satisfy the predicate, while the second set contains the rest.
 // The original set is not modified.
 func (s *Set[T]) Partition(predicate func(T) bool) (ISet[T], ISet[T]) {
-	matching := NewSet[T]()
-	nonMatching := NewSet[T]()
+	matching := NewSetWithCapacity[T](s.Size() / 2)
+	nonMatching := NewSetWithCapacity[T](s.Size() / 2)
 	s.ForEach(func(elem T) {
 		if predicate(elem) {
 			matching.Add(elem)
@@ -189,7 +210,7 @@ func (s *Set[T]) ForEach(action func(T)) {
 // Duplicates produced by the mapper will be collapsed in the resulting set.
 // The original set is not modified.
 func (s *Set[T]) Map(mapper func(T) T) ISet[T] {
-	mappedSet := NewSet[T]()
+	mappedSet := NewSetWithCapacity[T](s.Size())
 	s.ForEach(func(elem T) {
 		mapped := mapper(elem)
 		mappedSet.Add(mapped)
@@ -222,7 +243,7 @@ func (s *Set[T]) All(predicate func(T) bool) bool {
 // Filter creates a new set containing only the elements that satisfy the predicate.
 // The original set is not modified.
 func (s *Set[T]) Filter(predicate func(T) bool) ISet[T] {
-	filteredSet := NewSet[T]()
+	filteredSet := NewSetWithCapacity[T](s.Size())
 	s.ForEach(func(elem T) {
 		if predicate(elem) {
 			filteredSet.Add(elem)
@@ -248,7 +269,7 @@ func (s *Set[T]) Reduce(initial T, reducer func(T, T) T) T {
 // The mapper function should return a *Set[T] for each element.
 // The original set is not modified.
 func (s *Set[T]) FlatMap(mapper func(T) ISet[T]) ISet[T] {
-	flatMappedSet := NewSet[T]()
+	flatMappedSet := NewSetWithCapacity[T](s.Size())
 	s.ForEach(func(elem T) {
 		innerSet := mapper(elem)
 		innerSet.ForEach(func(mapped T) {
@@ -261,14 +282,18 @@ func (s *Set[T]) FlatMap(mapper func(T) ISet[T]) ISet[T] {
 // Copy creates a shallow copy of the set.
 // The new set contains the same elements as the original.
 func (s *Set[T]) Copy() ISet[T] {
-	copied := NewSet(s.ToSlice()...)
+	slice := s.ToSlice()
+	copied := NewSetWithCapacity(len(slice), slice...)
 	return copied
 }
 
 // Union returns a new set containing all elements from both sets.
 // The original sets are not modified.
 func (s *Set[T]) Union(other ISet[T]) ISet[T] {
-	unionSet := s.Copy()
+	unionSet := NewSetWithCapacity[T](s.Size() + other.Size())
+	s.ForEach(func(elem T) {
+		unionSet.Add(elem)
+	})
 	other.ForEach(func(elem T) {
 		unionSet.Add(elem)
 	})
@@ -279,11 +304,12 @@ func (s *Set[T]) Union(other ISet[T]) ISet[T] {
 // The original sets are not modified.
 func (s *Set[T]) Intersection(other ISet[T]) ISet[T] {
 
-	if other.Size() < s.Size() {
-		return other.Intersection(s)
+	max_size := s.Size()
+	if other.Size() > max_size {
+		max_size = other.Size()
 	}
 
-	intersectionSet := NewSet[T]()
+	intersectionSet := NewSetWithCapacity[T](max_size)
 	s.ForEach(func(elem T) {
 		if other.Contains(elem) {
 			intersectionSet.Add(elem)
@@ -295,7 +321,7 @@ func (s *Set[T]) Intersection(other ISet[T]) ISet[T] {
 // Difference returns a new set containing elements that exist in this set but not in the other set.
 // The original sets are not modified.
 func (s *Set[T]) Difference(other ISet[T]) ISet[T] {
-	differenceSet := NewSet[T]()
+	differenceSet := NewSetWithCapacity[T](s.Size())
 	s.ForEach(func(elem T) {
 		if !other.Contains(elem) {
 			differenceSet.Add(elem)
@@ -308,7 +334,13 @@ func (s *Set[T]) Difference(other ISet[T]) ISet[T] {
 // but not in both (XOR operation).
 // The original sets are not modified.
 func (s *Set[T]) SymmetricDifference(other ISet[T]) ISet[T] {
-	symmetricDifferenceSet := NewSet[T]()
+
+	max_size := s.Size()
+	if other.Size() > max_size {
+		max_size = other.Size()
+	}
+
+	symmetricDifferenceSet := NewSetWithCapacity[T](max_size)
 	s.ForEach(func(elem T) {
 		if !other.Contains(elem) {
 			symmetricDifferenceSet.Add(elem)

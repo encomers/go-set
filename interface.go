@@ -151,4 +151,9 @@ type IOrderedSet[T Ordered] interface {
 	Max() T
 	Sum() T
 	Sort(sortFunc func(a, b T) bool) []T
+	Sorted() []T
+}
+
+type ISyncSet[T comparable] interface {
+	ISet[T]
 }

@@ -20,7 +20,7 @@ func MapTo[T comparable, U comparable](s ISet[T], mapper func(T) U) ISet[U] {
 func Min[T Ordered](s ISet[T]) T {
 	var min T
 	first := true
-	for _, elem := range s.ToSlice() {
+	for elem := range s.Iter() {
 		if first || elem < min {
 			min = elem
 			first = false
@@ -33,7 +33,7 @@ func Min[T Ordered](s ISet[T]) T {
 func Max[T Ordered](s ISet[T]) T {
 	var max T
 	first := true
-	for _, elem := range s.ToSlice() {
+	for elem := range s.Iter() {
 		if first || elem > max {
 			max = elem
 			first = false
@@ -45,7 +45,7 @@ func Max[T Ordered](s ISet[T]) T {
 // Sum calculates the sum of all elements in the set.
 func Sum[T Ordered](s ISet[T]) T {
 	var sum T
-	for _, elem := range s.ToSlice() {
+	for elem := range s.Iter() {
 		sum += elem
 	}
 	return sum

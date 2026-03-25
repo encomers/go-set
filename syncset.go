@@ -18,6 +18,12 @@ func NewSyncSet[T comparable](elements ...T) *SyncSet[T] {
 	return s
 }
 
+// NewSyncSetWithCapacity creates and initializes a new SyncSet with the provided optional elements.
+func NewSyncSetWithCapacity[T comparable](capacity int, elements ...T) *SyncSet[T] {
+	s := &SyncSet[T]{set: NewSetWithCapacity(capacity, elements...)}
+	return s
+}
+
 // Add inserts the provided elements into the set.
 // Thread-safe.
 func (s *SyncSet[T]) Add(elements ...T) {
