@@ -1,5 +1,7 @@
 # go-set
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/encomers/go-set.svg)](https://pkg.go.dev/github.com/encomers/go-set)
+
 A powerful, generic, and high-performance Set implementation for Go (1.23+), designed for both simplicity and advanced functional use cases.
 
 ## Overview
