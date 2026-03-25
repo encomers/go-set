@@ -21,9 +21,6 @@ type ISet[T comparable] interface {
 	// If an element does not exist, it is ignored.
 	Remove(elements ...T)
 
-	// RemoveIf removes all elements from the set that satisfy the predicate.
-	RemoveIf(predicate func(T) bool)
-
 	// Contains checks if the specified element exists in the set.
 	// Returns true if the element is present, false otherwise.
 	Contains(element T) bool

@@ -52,18 +52,6 @@ func (s *Set[T]) Remove(elements ...T) {
 	}
 }
 
-// RemoveIf removes all elements from the set that satisfy the predicate.
-//
-// Note: This method iterates directly over the underlying map.
-// Do not add elements to the set during execution of this function.
-func (s *Set[T]) RemoveIf(predicate func(T) bool) {
-	s.ForEach(func(elem T) {
-		if predicate(elem) {
-			s.Remove(elem)
-		}
-	})
-}
-
 // Contains checks if the specified element exists in the set.
 // Returns true if the element is present, false otherwise.
 func (s *Set[T]) Contains(element T) bool {
@@ -332,11 +320,13 @@ func (s *Set[T]) SymmetricDifference(other ISet[T]) ISet[T] {
 // Retaint removes all elements from the set that do NOT satisfy the predicate.
 // Change the set to contain only elements that satisfy the predicate.
 func (s *Set[T]) Retaint(predicate func(T) bool) {
+	toRemove := make([]T, 0, s.Size()/2)
 	s.ForEach(func(elem T) {
 		if !predicate(elem) {
-			s.Remove(elem)
+			toRemove = append(toRemove, elem)
 		}
 	})
+	s.Remove(toRemove...)
 }
 
 // IsSubset returns true if all elements of this set are contained in the other set.

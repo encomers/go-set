@@ -34,14 +34,6 @@ func (s *SyncSet[T]) Remove(elements ...T) {
 	s.set.Remove(elements...)
 }
 
-// RemoveIf removes all elements from the set that satisfy the predicate.
-// Thread-safe.
-func (s *SyncSet[T]) RemoveIf(predicate func(T) bool) {
-	s.rwmutex.Lock()
-	defer s.rwmutex.Unlock()
-	s.set.RemoveIf(predicate)
-}
-
 // Contains checks if the specified element exists in the set.
 // Thread-safe.
 func (s *SyncSet[T]) Contains(element T) bool {

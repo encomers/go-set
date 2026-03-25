@@ -57,19 +57,6 @@ func TestSetRemove(t *testing.T) {
 	}
 }
 
-func TestSetRemoveIf(t *testing.T) {
-	s := NewSet(1, 2, 3, 4, 5, 6)
-	s.RemoveIf(func(x int) bool {
-		return x%2 == 0 // remove even numbers
-	})
-	if s.Size() != 3 {
-		t.Errorf("Expected size 3 after RemoveIf, got %d", s.Size())
-	}
-	if s.Contains(2) || s.Contains(4) || s.Contains(6) {
-		t.Error("Even numbers should be removed")
-	}
-}
-
 func TestSetContains(t *testing.T) {
 	s := NewSet(1, 2, 3)
 	if !s.Contains(1) || !s.Contains(2) || !s.Contains(3) {
@@ -559,16 +546,6 @@ func TestSyncSetRemove(t *testing.T) {
 	}
 	if s.Contains(2) || s.Contains(4) {
 		t.Error("Elements 2 and 4 should be removed")
-	}
-}
-
-func TestSyncSetRemoveIf(t *testing.T) {
-	s := NewSyncSet(1, 2, 3, 4, 5, 6)
-	s.RemoveIf(func(x int) bool {
-		return x%2 == 0
-	})
-	if s.Size() != 3 {
-		t.Errorf("Expected size 3 after RemoveIf, got %d", s.Size())
 	}
 }
 
@@ -1162,31 +1139,6 @@ func TestSyncSetConcurrentClear(t *testing.T) {
 	}
 
 	wg.Wait()
-}
-
-func TestSyncSetConcurrentRemoveIf(t *testing.T) {
-	s := NewSyncSet[int]()
-	for i := 0; i < 100; i++ {
-		s.Add(i)
-	}
-
-	var wg sync.WaitGroup
-	numGoroutines := 10
-
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func(offset int) {
-			defer wg.Done()
-			s.RemoveIf(func(x int) bool {
-				return x%2 == offset%2
-			})
-		}(i)
-	}
-
-	wg.Wait()
-
-	// Should not panic
-	_ = s.Size()
 }
 
 func TestSyncSetConcurrentRetaint(t *testing.T) {
