@@ -1543,43 +1543,247 @@ func BenchmarkSyncSetConcurrentContains(b *testing.B) {
 }
 
 // ============================================================================
-// TESTS FOR OrderedSet
+// TESTS FOR OrderedSet (полное покрытие нового кода)
 // ============================================================================
 
-func TestOrderesSetMinMaxSum(t *testing.T) {
-	s := NewOrderedSet(5, 3, 8, 1, 4)
-	min := s.Min()
-	if min != 1 {
-		t.Errorf("Expected min 1, got %d", min)
-	}
-	max := s.Max()
-	if max != 8 {
-		t.Errorf("Expected max 8, got %d", max)
-	}
-	sum := s.Sum()
-	if sum != 21 {
-		t.Errorf("Expected sum 21, got %d", sum)
-	}
+// Вспомогательная функция для проверки, какой «внутренний» тип используется
+func isSyncFlavor[T Ordered](s *OrderedSet[T]) bool {
+	_, ok := s.ISet.(*SyncSet[T])
+	return ok
+}
+
+func TestOrderedSetMinMaxSum(t *testing.T) {
+	t.Run("non-empty", func(t *testing.T) {
+		s := NewOrderedSet(5, 3, 8, 1, 4)
+		if got := s.Min(); got != 1 {
+			t.Errorf("Min() = %d, want 1", got)
+		}
+		if got := s.Max(); got != 8 {
+			t.Errorf("Max() = %d, want 8", got)
+		}
+		if got := s.Sum(); got != 21 {
+			t.Errorf("Sum() = %d, want 21", got)
+		}
+	})
+
+	t.Run("empty set", func(t *testing.T) {
+		// Текущее поведение базовых Min/Max/Sum — возвращают zero-value.
+		// Мы тестируем именно это поведение.
+		s := NewOrderedSet[int]()
+		if got := s.Min(); got != 0 {
+			t.Errorf("Min() on empty = %d, want 0", got)
+		}
+		if got := s.Max(); got != 0 {
+			t.Errorf("Max() on empty = %d, want 0", got)
+		}
+		if got := s.Sum(); got != 0 {
+			t.Errorf("Sum() on empty = %d, want 0", got)
+		}
+	})
+
+	t.Run("sync flavor", func(t *testing.T) {
+		s := NewOrderedSyncSet(5, 3, 8, 1, 4)
+		if got := s.Min(); got != 1 {
+			t.Errorf("Min() on Sync = %d, want 1", got)
+		}
+	})
+}
+
+func TestOrderedSetSortedAndSort(t *testing.T) {
+	t.Run("Sorted", func(t *testing.T) {
+		s := NewOrderedSet(5, 3, 8, 1, 4)
+		got := s.Sorted()
+		want := []int{1, 3, 4, 5, 8}
+		if len(got) != len(want) {
+			t.Fatalf("Sorted() len = %d, want %d", len(got), len(want))
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Errorf("Sorted()[%d] = %d, want %d", i, got[i], want[i])
+			}
+		}
+	})
+
+	t.Run("Sorted empty", func(t *testing.T) {
+		s := NewOrderedSet[int]()
+		if got := s.Sorted(); len(got) != 0 {
+			t.Errorf("Sorted() on empty returned %v, want []", got)
+		}
+	})
+
+	t.Run("Sort custom", func(t *testing.T) {
+		s := NewOrderedSet(5, 3, 8, 1, 4)
+		got := s.Sort(func(a, b int) bool { return a > b }) // descending
+		want := []int{8, 5, 4, 3, 1}
+		if len(got) != len(want) {
+			t.Fatalf("Sort() len = %d, want %d", len(got), len(want))
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Errorf("Sort()[%d] = %d, want %d", i, got[i], want[i])
+			}
+		}
+	})
+
+	t.Run("sync flavor Sorted", func(t *testing.T) {
+		s := NewOrderedSyncSet(10, 20, 5)
+		if got := s.Sorted(); got[0] != 5 || got[2] != 20 {
+			t.Errorf("Sorted() on Sync returned %v, want [5 10 20]", got)
+		}
+	})
+}
+
+func TestOrderedSetCopyPreservesFlavor(t *testing.T) {
+	t.Run("regular Set flavor", func(t *testing.T) {
+		orig := NewOrderedSet(1, 2, 3)
+		if isSyncFlavor(orig) {
+			t.Fatal("NewOrderedSet must not be sync")
+		}
+
+		copied := orig.Copy().(*OrderedSet[int])
+		if isSyncFlavor(copied) {
+			t.Error("Copy() of regular OrderedSet became sync")
+		}
+		if !copied.Equals(orig) {
+			t.Error("Copy() should have same elements")
+		}
+	})
+
+	t.Run("SyncSet flavor", func(t *testing.T) {
+		orig := NewOrderedSyncSet(1, 2, 3)
+		if !isSyncFlavor(orig) {
+			t.Fatal("NewOrderedSyncSet must be sync")
+		}
+
+		copied := orig.Copy().(*OrderedSet[int])
+		if !isSyncFlavor(copied) {
+			t.Error("Copy() of OrderedSyncSet lost sync flavor")
+		}
+		if !copied.Equals(orig) {
+			t.Error("Copy() should have same elements")
+		}
+	})
+}
+
+func TestOrderedSetPartitionPreservesFlavor(t *testing.T) {
+	pred := func(x int) bool { return x%2 == 0 }
+
+	t.Run("regular Set flavor", func(t *testing.T) {
+		orig := NewOrderedSet(1, 2, 3, 4)
+		even, odd := orig.Partition(pred)
+
+		evenOS := even.(*OrderedSet[int])
+		oddOS := odd.(*OrderedSet[int])
+
+		if isSyncFlavor(evenOS) || isSyncFlavor(oddOS) {
+			t.Error("Partition of regular OrderedSet returned sync flavor")
+		}
+		if evenOS.Size() != 2 || oddOS.Size() != 2 {
+			t.Errorf("wrong partition sizes: even=%d, odd=%d", evenOS.Size(), oddOS.Size())
+		}
+	})
+
+	t.Run("SyncSet flavor", func(t *testing.T) {
+		orig := NewOrderedSyncSet(1, 2, 3, 4)
+		even, odd := orig.Partition(pred)
+
+		evenOS := even.(*OrderedSet[int])
+		oddOS := odd.(*OrderedSet[int])
+
+		if !isSyncFlavor(evenOS) || !isSyncFlavor(oddOS) {
+			t.Error("Partition of OrderedSyncSet lost sync flavor")
+		}
+	})
 }
 
 func TestOrderedSetEquals(t *testing.T) {
 	s1 := NewOrderedSet(1, 2, 3)
 	s2 := NewOrderedSet(1, 2, 3)
-	s3 := NewSet(3, 2, 1)
-	s4 := NewSyncSet(3, 2, 1)
-
+	s3 := NewSet(3, 2, 1)     // обычный Set, другой порядок
+	s4 := NewSyncSet(3, 2, 1) // SyncSet, другой порядок
 	dif := NewOrderedSet(2, 3, 4)
 
 	if !s1.Equals(s2) {
-		t.Error("Sets with same elements in same order should be equal")
+		t.Error("identical OrderedSet should be equal")
 	}
 	if !s1.Equals(s3) {
-		t.Error("Sets with same elements in different order should not be equal")
+		t.Error("same elements (different order + different concrete type) should be equal")
 	}
 	if !s1.Equals(s4) {
-		t.Error("Sets with same elements in different order should not be equal")
+		t.Error("same elements (different order + SyncSet) should be equal")
 	}
 	if s1.Equals(dif) {
-		t.Error("Sets with different elements should not be equal")
+		t.Error("different elements should not be equal")
 	}
+
+	// Пустые сеты тоже равны
+	empty1 := NewOrderedSet[int]()
+	empty2 := NewOrderedSyncSet[int]()
+	if !empty1.Equals(empty2) {
+		t.Error("two empty sets (different flavors) should be equal")
+	}
+}
+
+func TestOrderedSetDifferentTypes(t *testing.T) {
+	t.Run("string", func(t *testing.T) {
+		s := NewOrderedSet("banana", "apple", "cherry")
+		if got := s.Min(); got != "apple" {
+			t.Errorf("Min() string = %q, want \"apple\"", got)
+		}
+		if got := s.Max(); got != "cherry" {
+			t.Errorf("Max() string = %q, want \"cherry\"", got)
+		}
+		if got := s.Sorted(); got[0] != "apple" || got[2] != "cherry" {
+			t.Errorf("Sorted() string = %v, want [apple banana cherry]", got)
+		}
+	})
+
+	t.Run("float64", func(t *testing.T) {
+		// 2.71 встречается дважды → Set автоматически уберёт дубликат
+		s := NewOrderedSet(3.14, 2.71, 1.0, 2.71)
+
+		if got := s.Min(); got != 1.0 {
+			t.Errorf("Min() float = %f, want 1.0", got)
+		}
+		if got := s.Max(); got != 3.14 {
+			t.Errorf("Max() float = %f, want 3.14", got)
+		}
+		if got := s.Sum(); got != 6.85 {
+			t.Errorf("Sum() float = %f, want 6.85", got)
+		}
+		if got := s.Sorted(); got[0] != 1.0 || got[2] != 3.14 {
+			t.Errorf("Sorted() float = %v, want [1 2.71 3.14]", got)
+		}
+	})
+}
+
+func TestOrderedSyncSetConcurrency(t *testing.T) {
+	s := NewOrderedSyncSet[int]()
+
+	const goroutines = 10
+	const addsPerGoroutine = 100
+
+	var wg sync.WaitGroup
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func(base int) {
+			defer wg.Done()
+			for j := 0; j < addsPerGoroutine; j++ {
+				s.Add(base + j)
+				if j%10 == 0 {
+					s.Remove(base + j/2) // случайные удаления
+				}
+			}
+		}(i * 1000)
+	}
+	wg.Wait()
+
+	// Проверяем, что структура не упала и методы Ordered работают
+	if s.Size() == 0 {
+		t.Error("expected some elements after concurrent adds")
+	}
+	_ = s.Min()
+	_ = s.Max()
+	_ = s.Sum()
+	_ = s.Sorted()
 }
