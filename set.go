@@ -383,6 +383,27 @@ func (s *Set[T]) Equals(other ISet[T]) bool {
 	return true
 }
 
+// EqualsWith returns true if both sets contain the same elements according to the provided equality function.
+// The equality function takes two elements of type T and returns true if they are considered equal.
+// This allows for custom equality logic (e.g., comparing struct fields instead of the whole struct).
+func (s *Set[T]) EqualsWith(other ISet[T], eqFunc func(T, T) bool) bool {
+	if s.Size() != other.Size() {
+		return false
+	}
+	for elem := range s.data {
+		found := false
+		other.ForEach(func(otherElem T) {
+			if eqFunc(elem, otherElem) {
+				found = true
+			}
+		})
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
 // String implements the fmt.Stringer interface.
 // Returns a string representation of the set.
 func (s *Set[T]) String() string {

@@ -296,3 +296,11 @@ func (s *SyncSet[T]) Retain(predicate func(T) bool) {
 	defer s.rwmutex.Unlock()
 	s.set.Retain(predicate)
 }
+
+// EqualsWith checks if this set is equal to another set using a custom equality function.
+// Thread-safe.
+func (s *SyncSet[T]) EqualsWith(other ISet[T], eqFunc func(T, T) bool) bool {
+	s.rwmutex.RLock()
+	defer s.rwmutex.RUnlock()
+	return s.set.EqualsWith(other, eqFunc)
+}

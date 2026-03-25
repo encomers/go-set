@@ -487,6 +487,19 @@ func TestSetEquals(t *testing.T) {
 	}
 }
 
+func TestSetEqualsWith(t *testing.T) {
+	s1 := NewSet(1, 2, 3)
+	s2 := NewSet(3, 2, 1) // Different order
+	s3 := NewSet(1, 2, 4)
+
+	if !s1.EqualsWith(s2, func(x, y int) bool { return x == y }) {
+		t.Error("Sets with same elements should be equal")
+	}
+	if s1.EqualsWith(s3, func(x, y int) bool { return x == y }) {
+		t.Error("Sets with different elements should not be equal")
+	}
+}
+
 func TestSetRetain(t *testing.T) {
 	s := NewSet(1, 2, 3, 4, 5)
 	s.Retain(func(x int) bool {
@@ -852,6 +865,32 @@ func TestSyncSetEquals(t *testing.T) {
 
 	if !s1.Equals(s2) {
 		t.Error("Sets with same elements should be equal")
+	}
+}
+
+func TestSyncEqualsWith(t *testing.T) {
+	s1 := NewSyncSet(1, 2, 3)
+	s2 := NewSyncSet(3, 2, 1) // Different order
+	s3 := NewSyncSet(1, 2, 4)
+
+	if !s1.EqualsWith(s2, func(x, y int) bool { return x == y }) {
+		t.Error("Sets with same elements should be equal")
+	}
+	if s1.EqualsWith(s3, func(x, y int) bool { return x == y }) {
+		t.Error("Sets with different elements should not be equal")
+	}
+}
+
+func TestSyncSetEqualsWith(t *testing.T) {
+	s1 := NewSyncSet(1, 2, 3)
+	s2 := NewSyncSet(3, 2, 1) // Different order
+	s3 := NewSet(1, 2, 4)
+
+	if !s1.EqualsWith(s2, func(x, y int) bool { return x == y }) {
+		t.Error("Sets with same elements should be equal")
+	}
+	if s1.EqualsWith(s3, func(x, y int) bool { return x == y }) {
+		t.Error("Sets with different elements should not be equal")
 	}
 }
 
