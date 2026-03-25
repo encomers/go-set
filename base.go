@@ -21,11 +21,9 @@ func Min[T Ordered](s ISet[T]) T {
 	var min T
 	first := true
 	for _, elem := range s.ToSlice() {
-		if first {
+		if first || elem < min {
 			min = elem
 			first = false
-		} else if elem < min {
-			min = elem
 		}
 	}
 	return min
@@ -36,12 +34,9 @@ func Max[T Ordered](s ISet[T]) T {
 	var max T
 	first := true
 	for _, elem := range s.ToSlice() {
-		if first {
+		if first || elem > max {
 			max = elem
 			first = false
-		}
-		if elem > max {
-			max = elem
 		}
 	}
 	return max

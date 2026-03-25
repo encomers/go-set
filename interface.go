@@ -140,7 +140,7 @@ type ISet[T comparable] interface {
 	// The original set is not modified.
 	Partition(predicate func(T) bool) (ISet[T], ISet[T])
 
-	// Retaint removes all elements from the set that do NOT satisfy the predicate.
+	// Retain removes all elements from the set that do NOT satisfy the predicate.
 	// Change the set to contain only elements that satisfy the predicate.
-	Retaint(predicate func(T) bool)
+	Retain(predicate func(T) bool)
 }

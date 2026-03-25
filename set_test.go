@@ -487,14 +487,14 @@ func TestSetEquals(t *testing.T) {
 	}
 }
 
-func TestSetRetaint(t *testing.T) {
+func TestSetRetain(t *testing.T) {
 	s := NewSet(1, 2, 3, 4, 5)
-	s.Retaint(func(x int) bool {
+	s.Retain(func(x int) bool {
 		return x%2 == 0 // Keep only even numbers
 	})
 
 	if s.Size() != 2 {
-		t.Errorf("Expected size 2 after Retaint, got %d", s.Size())
+		t.Errorf("Expected size 2 after Retain, got %d", s.Size())
 	}
 	if !s.Contains(2) || !s.Contains(4) {
 		t.Error("Set should contain only 2 and 4")
@@ -855,14 +855,15 @@ func TestSyncSetEquals(t *testing.T) {
 	}
 }
 
-func TestSyncSetRetaint(t *testing.T) {
+func TestSyncSetRetain(t *testing.T) {
 	s := NewSyncSet(1, 2, 3, 4, 5)
-	s.Retaint(func(x int) bool {
+	s.Retain(func(x int) bool {
 		return x%2 == 0
 	})
 
 	if s.Size() != 2 {
-		t.Errorf("Expected size 2 after Retaint, got %d", s.Size())
+		t.Errorf("Expected size 2 after Retain, got %d",
+			s.Size())
 	}
 }
 
@@ -1141,7 +1142,7 @@ func TestSyncSetConcurrentClear(t *testing.T) {
 	wg.Wait()
 }
 
-func TestSyncSetConcurrentRetaint(t *testing.T) {
+func TestSyncSetConcurrentRetain(t *testing.T) {
 	s := NewSyncSet[int]()
 	for i := 0; i < 100; i++ {
 		s.Add(i)
@@ -1154,7 +1155,7 @@ func TestSyncSetConcurrentRetaint(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			s.Retaint(func(x int) bool {
+			s.Retain(func(x int) bool {
 				return x%2 == 0
 			})
 		}()

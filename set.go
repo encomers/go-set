@@ -278,6 +278,11 @@ func (s *Set[T]) Union(other ISet[T]) ISet[T] {
 // Intersection returns a new set containing only elements that exist in both sets.
 // The original sets are not modified.
 func (s *Set[T]) Intersection(other ISet[T]) ISet[T] {
+
+	if other.Size() < s.Size() {
+		return other.Intersection(s)
+	}
+
 	intersectionSet := NewSet[T]()
 	s.ForEach(func(elem T) {
 		if other.Contains(elem) {
@@ -317,9 +322,9 @@ func (s *Set[T]) SymmetricDifference(other ISet[T]) ISet[T] {
 	return symmetricDifferenceSet
 }
 
-// Retaint removes all elements from the set that do NOT satisfy the predicate.
+// Retain removes all elements from the set that do NOT satisfy the predicate.
 // Change the set to contain only elements that satisfy the predicate.
-func (s *Set[T]) Retaint(predicate func(T) bool) {
+func (s *Set[T]) Retain(predicate func(T) bool) {
 	toRemove := make([]T, 0, s.Size()/2)
 	s.ForEach(func(elem T) {
 		if !predicate(elem) {
@@ -347,7 +352,7 @@ func (s *Set[T]) IsSuperset(other ISet[T]) bool {
 	if s.Size() < other.Size() {
 		return false
 	}
-	for _, elem := range other.ToSlice() {
+	for elem := range other.Iter() {
 		if !s.Contains(elem) {
 			return false
 		}

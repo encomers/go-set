@@ -289,10 +289,10 @@ func (s *SyncSet[T]) Partition(predicate func(T) bool) (ISet[T], ISet[T]) {
 	return s.set.Partition(predicate)
 }
 
-// Retaint removes all elements from the set that do NOT satisfy the predicate.
+// Retain removes all elements from the set that do NOT satisfy the predicate.
 // Thread-safe.
-func (s *SyncSet[T]) Retaint(predicate func(T) bool) {
+func (s *SyncSet[T]) Retain(predicate func(T) bool) {
 	s.rwmutex.Lock()
 	defer s.rwmutex.Unlock()
-	s.set.Retaint(predicate)
+	s.set.Retain(predicate)
 }
