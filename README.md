@@ -202,29 +202,6 @@ if s.Contains(2) {
 
 ---
 
-## Performance
-
-Benchmarks (Apple M4, arm64):
-
-```
-BenchmarkSetAdd                         ~96 ns/op     56 B/op
-BenchmarkSetContains                    ~4.7 ns/op     0 B/op
-BenchmarkSetRemove                      ~21 ns/op      0 B/op
-
-BenchmarkSyncSetAdd                     ~140 ns/op     74 B/op
-BenchmarkSyncSetContains                ~7.2 ns/op     0 B/op
-BenchmarkSyncSetConcurrentAdd           ~129 ns/op
-BenchmarkSyncSetConcurrentContains      ~88 ns/op
-```
-
-### Key Takeaways
-
-* Extremely fast lookups
-* Minimal allocations
-* SyncSet adds predictable locking overhead
-
----
-
 ## Design Notes
 
 * Backed by `map[T]struct{}`
