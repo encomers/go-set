@@ -1,6 +1,8 @@
 # go-set
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/encomers/go-set.svg)](https://pkg.go.dev/github.com/encomers/go-set)
+[![Go Version](https://img.shields.io/badge/Go-1.23%2B-blue.svg)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 A powerful, generic, and high-performance Set implementation for Go (1.23+), designed for both simplicity and advanced functional use cases.
 
