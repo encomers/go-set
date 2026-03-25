@@ -1541,3 +1541,45 @@ func BenchmarkSyncSetConcurrentContains(b *testing.B) {
 		}
 	})
 }
+
+// ============================================================================
+// TESTS FOR OrderedSet
+// ============================================================================
+
+func TestOrderesSetMinMaxSum(t *testing.T) {
+	s := NewOrderedSet(5, 3, 8, 1, 4)
+	min := s.Min()
+	if min != 1 {
+		t.Errorf("Expected min 1, got %d", min)
+	}
+	max := s.Max()
+	if max != 8 {
+		t.Errorf("Expected max 8, got %d", max)
+	}
+	sum := s.Sum()
+	if sum != 21 {
+		t.Errorf("Expected sum 21, got %d", sum)
+	}
+}
+
+func TestOrderedSetEquals(t *testing.T) {
+	s1 := NewOrderedSet(1, 2, 3)
+	s2 := NewOrderedSet(1, 2, 3)
+	s3 := NewSet(3, 2, 1)
+	s4 := NewSyncSet(3, 2, 1)
+
+	dif := NewOrderedSet(2, 3, 4)
+
+	if !s1.Equals(s2) {
+		t.Error("Sets with same elements in same order should be equal")
+	}
+	if !s1.Equals(s3) {
+		t.Error("Sets with same elements in different order should not be equal")
+	}
+	if !s1.Equals(s4) {
+		t.Error("Sets with same elements in different order should not be equal")
+	}
+	if s1.Equals(dif) {
+		t.Error("Sets with different elements should not be equal")
+	}
+}

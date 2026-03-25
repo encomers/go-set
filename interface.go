@@ -144,3 +144,11 @@ type ISet[T comparable] interface {
 	// Change the set to contain only elements that satisfy the predicate.
 	Retain(predicate func(T) bool)
 }
+
+type IOrderedSet[T Ordered] interface {
+	ISet[T]
+	Min() T
+	Max() T
+	Sum() T
+	Sort(sortFunc func(a, b T) bool) []T
+}
