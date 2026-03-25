@@ -443,7 +443,7 @@ func (s *Set[T]) String() string {
 }
 
 // MarshalJSON implements the json.Marshaler interface.
-// Set marshals as a JSON array (order is non-deterministic).
+// Set is marshaled as a JSON array. Order is non-deterministic.
 func (s *Set[T]) MarshalJSON() ([]byte, error) {
 	if s == nil {
 		return []byte("null"), nil
@@ -452,8 +452,8 @@ func (s *Set[T]) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
-// It expects a JSON array and adds all elements to the set (duplicates are ignored).
-func (s *SyncSet[T]) UnmarshalJSON(data []byte) error {
+// Expects a JSON array. Duplicates are automatically ignored.
+func (s *Set[T]) UnmarshalJSON(data []byte) error {
 	if s == nil {
 		return ErrNilSet
 	}
@@ -463,10 +463,7 @@ func (s *SyncSet[T]) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	s.rwmutex.Lock()
-	defer s.rwmutex.Unlock()
-
-	s.set.Clear()
-	s.set.Add(slice...)
+	s.Clear()
+	s.Add(slice...)
 	return nil
 }

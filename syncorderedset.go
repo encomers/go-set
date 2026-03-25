@@ -1,6 +1,9 @@
 package go_set
 
-import "sync"
+import (
+	"encoding/json"
+	"sync"
+)
 
 // OrderedSet is a set that provides additional methods for ordered types (int, float, string, etc.).
 type SyncOrderedSet[T Ordered] struct {
@@ -54,4 +57,33 @@ func (s *SyncOrderedSet[T]) Sort(sortFunc func(a, b T) bool) []T {
 	s.rwmutex.RLock()
 	defer s.rwmutex.RUnlock()
 	return s.OrderedSet.Sort(sortFunc)
+}
+
+// MarshalJSON marshals as JSON array in sorted order (thread-safe).
+func (s *SyncOrderedSet[T]) MarshalJSON() ([]byte, error) {
+	if s == nil || s.OrderedSet == nil {
+		return []byte("null"), nil
+	}
+	s.rwmutex.RLock()
+	defer s.rwmutex.RUnlock()
+	return json.Marshal(s.OrderedSet.Sorted())
+}
+
+// UnmarshalJSON unmarshals from JSON array (thread-safe).
+func (s *SyncOrderedSet[T]) UnmarshalJSON(data []byte) error {
+	if s == nil || s.OrderedSet == nil {
+		return ErrNilSet
+	}
+
+	var slice []T
+	if err := json.Unmarshal(data, &slice); err != nil {
+		return err
+	}
+
+	s.rwmutex.Lock()
+	defer s.rwmutex.Unlock()
+
+	s.OrderedSet.Clear()
+	s.OrderedSet.Add(slice...)
+	return nil
 }

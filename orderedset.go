@@ -1,5 +1,7 @@
 package go_set
 
+import "encoding/json"
+
 // OrderedSet is a set that provides additional methods for ordered types (int, float, string, etc.).
 type OrderedSet[T Ordered] struct {
 	*Set[T]
@@ -40,4 +42,28 @@ func (s *OrderedSet[T]) Sorted() []T {
 // Sort returns a slice of the set's elements sorted according to the provided sort function.
 func (s *OrderedSet[T]) Sort(sortFunc func(a, b T) bool) []T {
 	return Sort(s, sortFunc)
+}
+
+// MarshalJSON marshals OrderedSet as a JSON array in sorted order.
+func (s *OrderedSet[T]) MarshalJSON() ([]byte, error) {
+	if s == nil || s.Set == nil {
+		return []byte("null"), nil
+	}
+	return json.Marshal(s.Sorted()) // гарантированный отсортированный порядок
+}
+
+// UnmarshalJSON unmarshals from JSON array.
+func (s *OrderedSet[T]) UnmarshalJSON(data []byte) error {
+	if s == nil || s.Set == nil {
+		return ErrNilSet
+	}
+
+	var slice []T
+	if err := json.Unmarshal(data, &slice); err != nil {
+		return err
+	}
+
+	s.Clear()
+	s.Add(slice...)
+	return nil
 }

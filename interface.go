@@ -1,7 +1,6 @@
 package go_set
 
 import (
-	"errors"
 	"iter"
 )
 
@@ -161,5 +160,3 @@ type IOrderedSet[T Ordered] interface {
 	Sort(sortFunc func(a, b T) bool) []T
 	Sorted() []T
 }
-
-var ErrNilSet = errors.New("go_set: cannot marshal/unmarshal nil set")
