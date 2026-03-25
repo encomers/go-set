@@ -9,6 +9,10 @@ func NewOrderedSet[T Ordered](elements ...T) *OrderedSet[T] {
 	return &OrderedSet[T]{ISet: NewSet(elements...)}
 }
 
+func NewOrderedSyncSet[T Ordered](elements ...T) *OrderedSet[T] {
+	return &OrderedSet[T]{ISet: NewSyncSet(elements...)}
+}
+
 // Min возвращает минимальный элемент (натуральный порядок).
 func (s *OrderedSet[T]) Min() T {
 	return Min(s) // Min из base.go принимает ISet[T] с констрейном Ordered
