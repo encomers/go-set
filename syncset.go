@@ -1,6 +1,7 @@
 package go_set
 
 import (
+	"encoding/json"
 	"iter"
 	"sync"
 )
@@ -308,4 +309,29 @@ func (s *SyncSet[T]) EqualsWith(other ISet[T], eqFunc func(T, T) bool) bool {
 	s.rwmutex.RLock()
 	defer s.rwmutex.RUnlock()
 	return s.set.EqualsWith(other, eqFunc)
+}
+
+// MarshalJSON implements the json.Marshaler interface for thread-safe set.
+func (s *SyncSet[T]) MarshalJSON() ([]byte, error) {
+	if s == nil {
+		return []byte("null"), nil
+	}
+	s.rwmutex.RLock()
+	defer s.rwmutex.RUnlock()
+	return json.Marshal(s.set.ToSlice()) // или s.set (если ToSlice)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (s *SyncSet[T]) UnmarshalJSON(data []byte) error {
+	var slice []T
+	if err := json.Unmarshal(data, &slice); err != nil {
+		return err
+	}
+
+	s.rwmutex.Lock()
+	defer s.rwmutex.Unlock()
+
+	s.set.Clear()
+	s.set.Add(slice...)
+	return nil
 }

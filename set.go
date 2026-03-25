@@ -6,6 +6,7 @@
 package go_set
 
 import (
+	"encoding/json"
 	"fmt"
 	"iter"
 )
@@ -439,4 +440,26 @@ func (s *Set[T]) EqualsWith(other ISet[T], eqFunc func(T, T) bool) bool {
 // Returns a string representation of the set.
 func (s *Set[T]) String() string {
 	return fmt.Sprintf("Set%v", s.ToSlice())
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+// Set marshals as a JSON array (order is non-deterministic).
+func (s *Set[T]) MarshalJSON() ([]byte, error) {
+	if s == nil {
+		return []byte("null"), nil
+	}
+	return json.Marshal(s.ToSlice())
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// It expects a JSON array and adds all elements to the set (duplicates are ignored).
+func (s *Set[T]) UnmarshalJSON(data []byte) error {
+	var slice []T
+	if err := json.Unmarshal(data, &slice); err != nil {
+		return err
+	}
+
+	s.Clear()       // очищаем текущее множество
+	s.Add(slice...) // добавляем элементы (дубликаты автоматически игнорируются)
+	return nil
 }
