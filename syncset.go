@@ -322,16 +322,15 @@ func (s *SyncSet[T]) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
-func (s *SyncSet[T]) UnmarshalJSON(data []byte) error {
+func (s *OrderedSet[T]) UnmarshalJSON(data []byte) error {
+	if s == nil {
+		return ErrNilSet
+	}
 	var slice []T
 	if err := json.Unmarshal(data, &slice); err != nil {
 		return err
 	}
-
-	s.rwmutex.Lock()
-	defer s.rwmutex.Unlock()
-
-	s.set.Clear()
-	s.set.Add(slice...)
+	s.Clear()
+	s.Add(slice...)
 	return nil
 }

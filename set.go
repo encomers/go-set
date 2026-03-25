@@ -453,13 +453,20 @@ func (s *Set[T]) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 // It expects a JSON array and adds all elements to the set (duplicates are ignored).
-func (s *Set[T]) UnmarshalJSON(data []byte) error {
+func (s *SyncSet[T]) UnmarshalJSON(data []byte) error {
+	if s == nil {
+		return ErrNilSet
+	}
+
 	var slice []T
 	if err := json.Unmarshal(data, &slice); err != nil {
 		return err
 	}
 
-	s.Clear()       // очищаем текущее множество
-	s.Add(slice...) // добавляем элементы (дубликаты автоматически игнорируются)
+	s.rwmutex.Lock()
+	defer s.rwmutex.Unlock()
+
+	s.set.Clear()
+	s.set.Add(slice...)
 	return nil
 }
