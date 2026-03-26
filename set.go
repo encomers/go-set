@@ -46,10 +46,10 @@ func NewSetWithCapacity[T comparable](capacity int, elements ...T) *Set[T] {
 	if len(elements) > capacity {
 		capacity = len(elements)
 	}
-	// Добавляем запас ~50% (load factor map ~0.65, мы даём хороший запас)
+	// Add some extra capacity to reduce the likelihood of immediate resizing when adding more elements.
 	cap := int(float64(capacity) * 1.5)
 	if cap < 16 {
-		cap = 16 // минимальный разумный размер
+		cap = 16 // minimum capacity to avoid too small maps
 	}
 
 	s := &Set[T]{data: make(map[T]struct{}, cap)}
