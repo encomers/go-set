@@ -4,11 +4,15 @@ import (
 	"iter"
 )
 
-type Ordered interface {
+type Hashable interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
-		~float32 | ~float64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
 		~string
+}
+
+type Ordered interface {
+	Hashable | ~uintptr |
+		~float32 | ~float64
 }
 
 // ISet is the interface that defines the contract for a set data structure.
