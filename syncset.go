@@ -311,26 +311,31 @@ func (s *SyncSet[T]) EqualsWith(other ISet[T], eqFunc func(T, T) bool) bool {
 	return s.set.EqualsWith(other, eqFunc)
 }
 
-// MarshalJSON implements the json.Marshaler interface for thread-safe set.
+// MarshalJSON implements the json.Marshaler interface (thread-safe).
 func (s *SyncSet[T]) MarshalJSON() ([]byte, error) {
 	if s == nil {
 		return []byte("null"), nil
 	}
 	s.rwmutex.RLock()
 	defer s.rwmutex.RUnlock()
-	return json.Marshal(s.set.ToSlice()) // или s.set (если ToSlice)
+	return json.Marshal(s.set.ToSlice())
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface.
-func (s *OrderedSet[T]) UnmarshalJSON(data []byte) error {
+// UnmarshalJSON implements the json.Unmarshaler interface (thread-safe).
+func (s *SyncSet[T]) UnmarshalJSON(data []byte) error {
 	if s == nil {
 		return ErrNilSet
 	}
+
 	var slice []T
 	if err := json.Unmarshal(data, &slice); err != nil {
 		return err
 	}
-	s.Clear()
-	s.Add(slice...)
+
+	s.rwmutex.Lock()
+	defer s.rwmutex.Unlock()
+
+	s.set.Clear()
+	s.set.Add(slice...)
 	return nil
 }
